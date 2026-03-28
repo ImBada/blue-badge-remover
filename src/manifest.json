@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Blue Badge Remover",
+  "version": "1.0.0",
+  "description": "Hide paid blue badge accounts on X (Twitter)",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://x.com/*",
+    "https://api.x.com/*"
+  ],
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*"],
+      "js": ["src/content/index.ts"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup/index.html"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["src/injected/fetch-interceptor.ts"],
+      "matches": ["https://x.com/*"]
+    }
+  ]
+}

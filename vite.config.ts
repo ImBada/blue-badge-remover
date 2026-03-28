@@ -1,0 +1,24 @@
+import { defineConfig } from 'vite';
+import { crx } from '@crxjs/vite-plugin';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import manifest from './src/manifest.json';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+export default defineConfig({
+  plugins: [crx({ manifest })],
+  resolve: {
+    alias: {
+      '@shared': resolve(__dirname, 'src/shared'),
+      '@features': resolve(__dirname, 'src/features'),
+    },
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        'fetch-interceptor': resolve(__dirname, 'src/injected/fetch-interceptor.ts'),
+      },
+    },
+  },
+});

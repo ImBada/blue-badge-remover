@@ -1,0 +1,92 @@
+import { getSettings, saveSettings, getWhitelist, addToWhitelist, removeFromWhitelist } from '@features/settings';
+import { STORAGE_KEYS } from '@shared/constants';
+import type { Settings } from '@shared/types';
+
+let settings: Settings;
+
+async function init(): Promise<void> {
+  settings = await getSettings();
+  renderSettings();
+  renderWhitelist();
+  renderSyncStatus();
+  bindEvents();
+}
+
+function renderSettings(): void {
+  (document.getElementById('enabled') as HTMLInputElement).checked = settings.enabled;
+  (document.getElementById('filter-timeline') as HTMLInputElement).checked = settings.filter.timeline;
+  (document.getElementById('filter-replies') as HTMLInputElement).checked = settings.filter.replies;
+  (document.getElementById('filter-search') as HTMLInputElement).checked = settings.filter.search;
+  (document.getElementById('retweetFilter') as HTMLInputElement).checked = settings.retweetFilter;
+
+  const hideModeRadio = document.querySelector(`input[name="hideMode"][value="${settings.hideMode}"]`) as HTMLInputElement | null;
+  if (hideModeRadio) hideModeRadio.checked = true;
+
+  const quoteModeRadio = document.querySelector(`input[name="quoteMode"][value="${settings.quoteMode}"]`) as HTMLInputElement | null;
+  if (quoteModeRadio) quoteModeRadio.checked = true;
+}
+
+async function renderWhitelist(): Promise<void> {
+  const container = document.getElementById('whitelist-container')!;
+  const list = await getWhitelist();
+  container.innerHTML = list
+    .map((handle) => `<div class="whitelist-item"><span>${handle}</span><button data-handle="${handle}">✕</button></div>`)
+    .join('');
+
+  container.querySelectorAll('button[data-handle]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const handle = btn.getAttribute('data-handle')!;
+      await removeFromWhitelist(handle);
+      await renderWhitelist();
+    });
+  });
+}
+
+async function renderSyncStatus(): Promise<void> {
+  const stored = await chrome.storage.local.get([STORAGE_KEYS.LAST_SYNC_AT]);
+  const lastSync = stored[STORAGE_KEYS.LAST_SYNC_AT] as string | null;
+  document.getElementById('sync-status')!.textContent =
+    `마지막 동기화: ${lastSync ? new Date(lastSync).toLocaleString('ko-KR') : '-'}`;
+}
+
+function bindEvents(): void {
+  const save = async (): Promise<void> => {
+    settings.enabled = (document.getElementById('enabled') as HTMLInputElement).checked;
+    settings.filter.timeline = (document.getElementById('filter-timeline') as HTMLInputElement).checked;
+    settings.filter.replies = (document.getElementById('filter-replies') as HTMLInputElement).checked;
+    settings.filter.search = (document.getElementById('filter-search') as HTMLInputElement).checked;
+    settings.retweetFilter = (document.getElementById('retweetFilter') as HTMLInputElement).checked;
+    settings.hideMode = (document.querySelector('input[name="hideMode"]:checked') as HTMLInputElement).value as Settings['hideMode'];
+    settings.quoteMode = (document.querySelector('input[name="quoteMode"]:checked') as HTMLInputElement).value as Settings['quoteMode'];
+    await saveSettings(settings);
+  };
+
+  document.querySelectorAll('input').forEach((input) => {
+    input.addEventListener('change', save);
+  });
+
+  document.getElementById('sync-btn')!.addEventListener('click', async () => {
+    const btn = document.getElementById('sync-btn') as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = '동기화 중...';
+    try {
+      await chrome.runtime.sendMessage({ type: 'SYNC_FOLLOW_LIST' });
+      await renderSyncStatus();
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔄 동기화';
+    }
+  });
+
+  document.getElementById('whitelist-add')!.addEventListener('click', async () => {
+    const input = document.getElementById('whitelist-input') as HTMLInputElement;
+    const handle = input.value.trim();
+    if (!handle) return;
+    const normalized = handle.startsWith('@') ? handle : `@${handle}`;
+    await addToWhitelist(normalized);
+    input.value = '';
+    await renderWhitelist();
+  });
+}
+
+init();

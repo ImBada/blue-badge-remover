@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git diff-tree:*)",
+      "Bash(git merge:*)",
+      "Bash(git branch:*)",
+      "Bash(grep -E \"\\\\.\\(json|ts|js|html|css\\)$|^d\")",
+      "Bash(git:*)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(npm view:*)",
+      "Bash(npx vite:*)",
+      "Bash(node -e \"const p = require\\(''./node_modules/@crxjs/vite-plugin/package.json''\\); console.log\\(''crxjs:'', p.version\\)\")",
+      "Bash(node:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npm run:*)",
+      "Bash(/tmp/plan_comparison.txt:*)",
+      "Read(//tmp/**)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}
