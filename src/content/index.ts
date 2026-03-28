@@ -153,7 +153,7 @@ function processTweet(tweetEl: HTMLElement): void {
   if (isRetweet) {
     // 리트윗인 경우: 표시된 작성자가 원본 작성자
     // socialContext에 리트윗한 사람의 이름이 있음
-    const retweeterName = socialContext?.textContent?.replace(/\s*Retweeted.*|reposted.*|님이.*리트윗.*|님이.*리포스트.*/i, '').trim() ?? '';
+    const retweeterName = socialContext?.textContent?.replace(/\s*(Retweeted|reposted|님이\s*재게시함|님이\s*리트윗함|님이\s*리포스트함|님이\s*리트윗.*|님이\s*리포스트.*).*/i, '').trim() ?? '';
 
     // 원본 작성자(author)가 파딱이면 숨김
     const originalIsFadak = isFadak;
