@@ -495,6 +495,7 @@ function reprocessExistingTweets(): void {
 }
 
 const FADAK_BANNER_ID = 'bbr-fadak-profile-banner';
+let fadakBannerObserver: MutationObserver | null = null;
 
 function showFadakProfileBanner(): void {
   if (!isProfilePage() || !currentSettings.enabled) return;
@@ -522,19 +523,24 @@ function showFadakProfileBanner(): void {
   if (tryInsertBanner()) return;
 
   // 뱃지가 아직 렌더링되지 않았으면 MutationObserver로 감지
+  if (fadakBannerObserver) fadakBannerObserver.disconnect();
   const target = document.querySelector('[data-testid="primaryColumn"]') ?? document.body;
-  const obs = new MutationObserver(() => {
+  fadakBannerObserver = new MutationObserver(() => {
     if (tryInsertBanner()) {
-      obs.disconnect();
+      fadakBannerObserver?.disconnect();
+      fadakBannerObserver = null;
     }
   });
-  obs.observe(target, { childList: true, subtree: true });
-  // 안전장치: 10초 후 해제
-  setTimeout(() => obs.disconnect(), 10000);
+  fadakBannerObserver.observe(target, { childList: true, subtree: true });
+  setTimeout(() => { fadakBannerObserver?.disconnect(); fadakBannerObserver = null; }, 10000);
 }
 
 function removeFadakBanner(): void {
   document.getElementById(FADAK_BANNER_ID)?.remove();
+  if (fadakBannerObserver) {
+    fadakBannerObserver.disconnect();
+    fadakBannerObserver = null;
+  }
 }
 
 interface DebugInfo {
