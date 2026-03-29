@@ -467,7 +467,21 @@ function listenForNavigation(): void {
     originalPushState.apply(this, args);
     onNavigate();
   };
+  const originalReplaceState = history.replaceState;
+  history.replaceState = function (...args: Parameters<typeof history.replaceState>) {
+    originalReplaceState.apply(this, args);
+    onNavigate();
+  };
   window.addEventListener('popstate', onNavigate);
+
+  // URL polling fallback (X SPA가 history API를 우회하는 경우 대비)
+  let lastUrl = window.location.href;
+  setInterval(() => {
+    if (window.location.href !== lastUrl) {
+      lastUrl = window.location.href;
+      onNavigate();
+    }
+  }, 500);
 }
 
 function onNavigate(): void {
