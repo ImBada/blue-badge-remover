@@ -13,10 +13,7 @@
   <img alt="Manifest V3" src="https://img.shields.io/badge/Manifest-V3-blue">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178c6">
   <img alt="License" src="https://img.shields.io/badge/License-MIT-green">
-</p>
-
-<p align="center">
-  <img src="docs/img/twitter-stat.png" alt="730K impressions, 10.1K retweets, 5.98K likes" width="520">
+  <a href="https://x.com/Fotoner_P/status/2037919990154936326"><img alt="Featured on X" src="https://img.shields.io/badge/Featured_on_X-10K+_retweets-000000?logo=x&logoColor=white"></a>
 </p>
 
 ---
