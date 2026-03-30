@@ -282,3 +282,93 @@ body {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+
+.kw-row {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 3px 4px;
+  transition: background 0.12s;
+}
+
+.kw-row:hover {
+  background: #1d1f23;
+}
+
+.kw-row.selected {
+  background: #1d9bf01a;
+  outline: 1px solid #1d9bf040;
+}
+
+/* ── Keyword Detail Panel ── */
+
+.kw-detail {
+  margin-top: 14px;
+  border-top: 1px solid #2f3336;
+  padding-top: 14px;
+}
+
+.kw-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.kw-detail-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d9bf0;
+}
+
+.kw-detail-close {
+  padding: 2px 8px;
+  font-size: 12px;
+  border: 1px solid #2f3336;
+  border-radius: 20px;
+  background: transparent;
+  color: #71767b;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.kw-detail-close:hover {
+  background: #1d1f23;
+  color: #e7e9ea;
+}
+
+.kw-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.kw-detail-item {
+  padding: 8px 12px;
+  background: #0a0a0a;
+  border-radius: 8px;
+  border-left: 2px solid #1d9bf040;
+}
+
+.kw-detail-meta {
+  display: block;
+  font-size: 11px;
+  color: #1d9bf0;
+  margin-bottom: 4px;
+}
+
+.kw-detail-text {
+  font-size: 13px;
+  color: #e7e9ea;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+}
+
+.kw-highlight {
+  background: #1d9bf033;
+  color: #1d9bf0;
+  border-radius: 3px;
+  padding: 0 1px;
+}
