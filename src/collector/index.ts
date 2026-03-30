@@ -3,12 +3,17 @@ import { getCustomFilterList, parseFilterList, DEFAULT_FILTER_LIST } from '@feat
 import type { CollectedFadak, FilterRule } from '@shared/types';
 
 let hideFiltered = false;
+let hideEnglish = false;
 let cachedList: CollectedFadak[] = [];
 let filterRules: FilterRule[] = [];
 
 async function loadFilterRules(): Promise<FilterRule[]> {
   const custom = await getCustomFilterList();
   return parseFilterList(DEFAULT_FILTER_LIST + '\n' + custom);
+}
+
+function isEnglishToken(token: string): boolean {
+  return /^[a-zA-Z][a-zA-Z0-9]*$/.test(token);
 }
 
 function isTokenFiltered(token: string, rules: FilterRule[]): boolean {
@@ -88,11 +93,18 @@ function renderKeywords(list: CollectedFadak[]): void {
     return;
   }
 
-  const counts = countTokens(allTexts);
-  let top = topN(counts, 30);
+  let counts = countTokens(allTexts);
   if (hideFiltered) {
-    top = top.filter(({ token }) => !isTokenFiltered(token, filterRules));
+    for (const token of counts.keys()) {
+      if (isTokenFiltered(token, filterRules)) counts.delete(token);
+    }
   }
+  if (hideEnglish) {
+    for (const token of counts.keys()) {
+      if (isEnglishToken(token)) counts.delete(token);
+    }
+  }
+  const top = topN(counts, 30);
   const max = top[0]?.count ?? 1;
 
   section.style.display = 'block';
@@ -114,7 +126,20 @@ function renderKeywords(list: CollectedFadak[]): void {
     renderKeywords(cachedList);
   });
 
-  headingRow.append(heading, toggleBtn);
+  const toggleEnglishBtn = document.createElement('button');
+  toggleEnglishBtn.type = 'button';
+  toggleEnglishBtn.className = 'kw-toggle' + (hideEnglish ? ' active' : '');
+  toggleEnglishBtn.textContent = '영어 키워드 제외';
+  toggleEnglishBtn.addEventListener('click', () => {
+    hideEnglish = !hideEnglish;
+    renderKeywords(cachedList);
+  });
+
+  const toggleGroup = document.createElement('div');
+  toggleGroup.className = 'kw-toggle-group';
+  toggleGroup.append(toggleBtn, toggleEnglishBtn);
+
+  headingRow.append(heading, toggleGroup);
   section.appendChild(headingRow);
 
   if (top.length === 0) {

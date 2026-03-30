@@ -197,6 +197,11 @@ body {
   color: #e7e9ea;
 }
 
+.kw-toggle-group {
+  display: flex;
+  gap: 6px;
+}
+
 .kw-toggle {
   padding: 3px 10px;
   font-size: 11px;
