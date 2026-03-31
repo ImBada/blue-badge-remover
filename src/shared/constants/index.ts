@@ -6,6 +6,7 @@ export const DEFAULT_SETTINGS: Settings = {
     timeline: true,
     replies: true,
     search: true,
+    bookmarks: false,
   },
   hideMode: 'remove',
   retweetFilter: true,
@@ -26,6 +27,7 @@ export const STORAGE_KEYS = {
   LAST_SYNC_AT: 'lastSyncAt',
   CUSTOM_FILTER_LIST: 'customFilterList',
   COLLECTED_FADAKS: 'collectedFadaks',
+  DISABLED_FILTER_CATEGORIES: 'disabledFilterCategories',
 } as const;
 
 export const X_GRAPHQL_ENDPOINTS = [
@@ -35,9 +37,7 @@ export const X_GRAPHQL_ENDPOINTS = [
 
 export const MESSAGE_TYPES = {
   BADGE_DATA: 'BBR_BADGE_DATA',
-  TOKEN_DATA: 'BBR_TOKEN_DATA',
   USER_ID: 'BBR_USER_ID',
-  CSRF_TOKEN: 'BBR_CSRF_TOKEN',
   FOLLOW_DATA: 'BBR_FOLLOW_DATA',
   PROFILE_DATA: 'BBR_PROFILE_DATA',
   CONTENT_READY: 'BBR_CONTENT_READY',

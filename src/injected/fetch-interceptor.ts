@@ -5,9 +5,7 @@
 // asserts that these values match the shared constants.
 const MESSAGE_TYPES = {
   BADGE_DATA: 'BBR_BADGE_DATA',
-  TOKEN_DATA: 'BBR_TOKEN_DATA',
   USER_ID: 'BBR_USER_ID',
-  CSRF_TOKEN: 'BBR_CSRF_TOKEN',
   FOLLOW_DATA: 'BBR_FOLLOW_DATA',
   PROFILE_DATA: 'BBR_PROFILE_DATA',
   CONTENT_READY: 'BBR_CONTENT_READY',
@@ -43,24 +41,6 @@ window.fetch = async function patchedFetch(
 ): Promise<Response> {
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
 
-  // Extract Bearer token from request headers
-  const authHeader = extractAuthHeader(init);
-  if (authHeader) {
-    window.postMessage({
-      type: MESSAGE_TYPES.TOKEN_DATA,
-      token: authHeader.replace('Bearer ', ''),
-    }, '*');
-  }
-
-  // Extract CSRF token from request headers
-  const csrfHeader = extractCsrfHeader(init);
-  if (csrfHeader) {
-    window.postMessage({
-      type: MESSAGE_TYPES.CSRF_TOKEN,
-      csrfToken: csrfHeader,
-    }, '*');
-  }
-
   const response = await originalFetch.call(window, input, init);
 
   // Intercept GraphQL responses
@@ -89,7 +69,6 @@ window.fetch = async function patchedFetch(
 // Also intercept XMLHttpRequest — X uses XHR for its API calls, not fetch
 const origXhrOpen = XMLHttpRequest.prototype.open;
 const origXhrSend = XMLHttpRequest.prototype.send;
-const origXhrSetHeader = XMLHttpRequest.prototype.setRequestHeader;
 
 XMLHttpRequest.prototype.open = function patchedXhrOpen(
   method: string,
@@ -104,16 +83,6 @@ XMLHttpRequest.prototype.open = function patchedXhrOpen(
     return origXhrOpen.call(this, method, url);
   }
   return origXhrOpen.call(this, method, url, async, username, password);
-};
-
-XMLHttpRequest.prototype.setRequestHeader = function patchedXhrSetHeader(name: string, value: string) {
-  if (name.toLowerCase() === 'authorization') {
-    window.postMessage({ type: MESSAGE_TYPES.TOKEN_DATA, token: value.replace('Bearer ', '') }, '*');
-  }
-  if (name.toLowerCase() === 'x-csrf-token') {
-    window.postMessage({ type: MESSAGE_TYPES.CSRF_TOKEN, csrfToken: value }, '*');
-  }
-  return origXhrSetHeader.call(this, name, value);
 };
 
 XMLHttpRequest.prototype.send = function patchedXhrSend(body?: Document | XMLHttpRequestBodyInit | null) {
@@ -138,34 +107,6 @@ XMLHttpRequest.prototype.send = function patchedXhrSend(body?: Document | XMLHtt
   }
   return origXhrSend.call(this, body);
 };
-
-function extractAuthHeader(init?: RequestInit): string | null {
-  if (!init?.headers) return null;
-
-  if (init.headers instanceof Headers) {
-    return init.headers.get('authorization');
-  }
-  if (Array.isArray(init.headers)) {
-    const entry = init.headers.find(([k]) => k.toLowerCase() === 'authorization');
-    return entry ? entry[1] : null;
-  }
-  const record = init.headers as Record<string, string>;
-  return record['authorization'] ?? record['Authorization'] ?? null;
-}
-
-function extractCsrfHeader(init?: RequestInit): string | null {
-  if (!init?.headers) return null;
-
-  if (init.headers instanceof Headers) {
-    return init.headers.get('x-csrf-token');
-  }
-  if (Array.isArray(init.headers)) {
-    const entry = init.headers.find(([k]) => k.toLowerCase() === 'x-csrf-token');
-    return entry ? entry[1] : null;
-  }
-  const record = init.headers as Record<string, string>;
-  return record['x-csrf-token'] ?? record['X-Csrf-Token'] ?? null;
-}
 
 function extractBadgeData(data: unknown): void {
   const users: Array<Record<string, unknown>> = [];
@@ -219,34 +160,40 @@ function findViewerId(obj: unknown): string | null {
 }
 
 function extractFollowData(data: unknown): void {
-  const userIds: string[] = [];
-  findFollowedUserIds(data, userIds);
-  if (userIds.length > 0) {
+  const handles: string[] = [];
+  findFollowedHandles(data, handles);
+  if (handles.length > 0) {
     window.postMessage({
       type: MESSAGE_TYPES.FOLLOW_DATA,
-      userIds,
+      handles,
     }, '*');
   }
 }
 
-function findFollowedUserIds(obj: unknown, result: string[]): void {
+function findFollowedHandles(obj: unknown, result: string[]): void {
   if (obj === null || typeof obj !== 'object') return;
   const record = obj as Record<string, unknown>;
 
-  // X Following API 응답에서 user_results.result.rest_id 추출
+  // X Following API 응답에서 screen_name 추출
   if ('user_results' in record) {
     const userResults = record['user_results'] as Record<string, unknown> | null;
-    const restId = (userResults?.['result'] as Record<string, unknown> | undefined)?.['rest_id'];
-    if (typeof restId === 'string') {
-      result.push(restId);
+    const userResult = userResults?.['result'] as Record<string, unknown> | undefined;
+    if (userResult) {
+      // screen_name은 legacy 또는 core에 있음
+      const legacy = userResult['legacy'] as Record<string, unknown> | undefined;
+      const core = (userResult['core'] as Record<string, unknown> | undefined)?.['user_results'] as Record<string, unknown> | undefined;
+      const screenName = legacy?.['screen_name'] ?? core?.['screen_name'];
+      if (typeof screenName === 'string') {
+        result.push(screenName.toLowerCase());
+      }
     }
   }
 
   for (const value of Object.values(record)) {
     if (Array.isArray(value)) {
-      value.forEach((item) => findFollowedUserIds(item, result));
+      value.forEach((item) => findFollowedHandles(item, result));
     } else if (typeof value === 'object') {
-      findFollowedUserIds(value, result);
+      findFollowedHandles(value, result);
     }
   }
 }
