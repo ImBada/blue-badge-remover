@@ -186,6 +186,9 @@ function listenForMessages(): void {
         const withBio = (event.data.profiles as Array<{ handle: string; bio: string }>).filter((p) => p.bio);
         if (withBio.length > 0) console.log('[BBR PROFILE_DATA bios]', withBio.map((p) => `${p.handle}: ${p.bio.slice(0, 30)}`));
       }
+      if (currentSettings.keywordFilterEnabled) {
+        reprocessExistingTweets();
+      }
     }
 
     if (event.data?.type === MESSAGE_TYPES.FOLLOW_DATA) {
