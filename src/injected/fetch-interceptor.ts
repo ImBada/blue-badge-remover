@@ -238,6 +238,7 @@ function extractProfileData(data: unknown, endpointHint?: string): void {
       }
     }
     window.postMessage({ type: MESSAGE_TYPES.PROFILE_DATA, profiles }, '*');
+
     if (bbrDebugMode) {
       const withBio = profiles.filter((p) => p.bio);
       const withoutBio = profiles.filter((p) => !p.bio);
@@ -286,3 +287,88 @@ function findProfileObjects(obj: unknown, result: ProfileEntry[]): void {
     }
   }
 }
+
+interface ArticleData {
+  handle: string;
+  following: boolean;
+}
+
+function extractArticleDataFromFiber(article: HTMLElement): ArticleData | null {
+  const fiberKey = Object.keys(article).find(
+    (k) => k.startsWith('__reactFiber') || k.startsWith('__reactInternalInstance'),
+  );
+  if (!fiberKey) return null;
+
+  const seenProps = new WeakSet<object>();
+  function scanProps(obj: unknown, depth: number): ArticleData | null {
+    if (!obj || typeof obj !== 'object' || depth > 50 || seenProps.has(obj as object)) return null;
+    seenProps.add(obj as object);
+    const r = obj as Record<string, unknown>;
+    if (typeof r['screen_name'] === 'string' && typeof r['following'] === 'boolean') {
+      return { handle: r['screen_name'], following: r['following'] };
+    }
+    if (Array.isArray(obj)) {
+      for (const item of obj) { const f = scanProps(item, depth + 1); if (f) return f; }
+      return null;
+    }
+    for (const key of Object.keys(r)) {
+      let v: unknown; try { v = r[key]; } catch { continue; }
+      if (v && typeof v === 'object') { const f = scanProps(v, depth + 1); if (f) return f; }
+    }
+    return null;
+  }
+
+  const seenFiber = new WeakSet<object>();
+  function walkFiber(node: unknown, depth: number): ArticleData | null {
+    if (!node || typeof node !== 'object' || depth > 80 || seenFiber.has(node as object)) return null;
+    seenFiber.add(node as object);
+    const fiber = node as Record<string, unknown>;
+    try {
+      const props = fiber['memoizedProps'];
+      if (props && typeof props === 'object') {
+        const r = scanProps(props, 0);
+        if (r) return r;
+      }
+      return walkFiber(fiber['child'], depth + 1) ?? walkFiber(fiber['sibling'], depth + 1);
+    } catch { return null; }
+  }
+
+  const data = walkFiber((article as unknown as Record<string, unknown>)[fiberKey], 0);
+  if (bbrDebugMode && data) {
+    console.log('[BBR-DOM]', data.handle, `following=${data.following}`);
+  }
+  return data;
+}
+
+(function observeTweetArticles() {
+  function processArticle(article: HTMLElement) {
+    const data = extractArticleDataFromFiber(article);
+    if (!data?.following) return;
+    window.postMessage({
+      type: MESSAGE_TYPES.FOLLOW_DATA,
+      handles: [data.handle.toLowerCase()],
+      source: 'inline',
+    }, '*');
+  }
+
+  const observer = new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      for (const node of m.addedNodes) {
+        if (!(node instanceof HTMLElement)) continue;
+        if (node.matches('article[data-testid="tweet"]')) {
+          processArticle(node);
+        } else {
+          node.querySelectorAll<HTMLElement>('article[data-testid="tweet"]').forEach(processArticle);
+        }
+      }
+    }
+  });
+
+  const startObserver = () => observer.observe(document.body, { childList: true, subtree: true });
+  if (document.body) {
+    startObserver();
+  } else {
+    document.addEventListener('DOMContentLoaded', startObserver);
+  }
+})();
+
