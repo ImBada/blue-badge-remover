@@ -18,6 +18,9 @@ function openPage(url: string): void {
 }
 
 async function init(): Promise<void> {
+  if (isFirefoxAndroid()) {
+    document.body.style.width = '100vw';
+  }
   settings = await getSettings();
   renderSettings();
   applyTranslations();
