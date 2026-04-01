@@ -5,6 +5,18 @@ import type { Settings } from '@shared/types';
 
 let settings: Settings;
 
+function isFirefoxAndroid(): boolean {
+  return navigator.userAgent.includes('Firefox') && navigator.userAgent.includes('Android');
+}
+
+function openPage(url: string): void {
+  if (isFirefoxAndroid()) {
+    window.location.href = url;
+  } else {
+    void chrome.tabs.create({ url });
+  }
+}
+
 async function init(): Promise<void> {
   settings = await getSettings();
   renderSettings();
@@ -144,7 +156,7 @@ function bindEvents(): void {
   });
 
   document.getElementById('open-whitelist-btn')!.addEventListener('click', () => {
-    void chrome.tabs.create({ url: chrome.runtime.getURL('src/whitelist/index.html') });
+    openPage(chrome.runtime.getURL('src/whitelist/index.html'));
   });
 
   document.getElementById('clear-cache-btn')!.addEventListener('click', async () => {
@@ -174,11 +186,15 @@ function bindEvents(): void {
   });
 
   document.getElementById('open-options-btn')!.addEventListener('click', () => {
-    chrome.runtime.openOptionsPage();
+    if (isFirefoxAndroid()) {
+      window.location.href = chrome.runtime.getURL('src/options/index.html');
+    } else {
+      chrome.runtime.openOptionsPage();
+    }
   });
 
   document.getElementById('open-collector-btn')!.addEventListener('click', () => {
-    void chrome.tabs.create({ url: chrome.runtime.getURL('src/collector/index.html') });
+    openPage(chrome.runtime.getURL('src/collector/index.html'));
   });
 
   document.getElementById('onboarding-dismiss')?.addEventListener('click', async () => {
