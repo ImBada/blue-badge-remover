@@ -129,7 +129,7 @@ async function init(): Promise<void> {
       currentUserHandle = getMyHandle();
     }
     showFadakProfileBanner(fadakBannerDeps);
-    void showOnboardingSiteBanner();
+    // void showOnboardingSiteBanner(); // fiber scan now auto-detects follows; onboarding prompt no longer needed
     startAccountSwitchWatcher();
   }, 3000);
 
@@ -281,10 +281,10 @@ function listenForSettingsChanges(): void {
         reprocessExistingTweets();
       });
     }
-    const syncChange = changes[STORAGE_KEYS.LAST_SYNC_AT];
-    if (syncChange) {
-      document.getElementById(ONBOARDING_SITE_BANNER_ID)?.remove();
-    }
+    // const syncChange = changes[STORAGE_KEYS.LAST_SYNC_AT];
+    // if (syncChange) {
+    //   document.getElementById(ONBOARDING_SITE_BANNER_ID)?.remove();
+    // }
   });
 }
 
@@ -293,9 +293,9 @@ function isHandleFollowed(handle: string): boolean {
 }
 
 
-const ONBOARDING_SITE_BANNER_ID = 'bbr-onboarding-site-banner';
+// const ONBOARDING_SITE_BANNER_ID = 'bbr-onboarding-site-banner';
 
-async function showOnboardingSiteBanner(): Promise<void> {
+/* async function showOnboardingSiteBanner(): Promise<void> {
   if (document.getElementById(ONBOARDING_SITE_BANNER_ID)) return;
   if (!currentSettings.enabled) return;
   if (window.location.pathname.includes('/following')) return;
@@ -343,7 +343,7 @@ async function showOnboardingSiteBanner(): Promise<void> {
   banner.appendChild(dismiss);
 
   header.appendChild(banner);
-}
+} */
 
 function isHandleWhitelisted(handle: string): boolean {
   return whitelistSet.has('@' + handle.toLowerCase());
